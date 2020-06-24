@@ -4,11 +4,11 @@
 #define WELL_LEVEL_SENSOR D5
 const int RELAY_SWITCH = 5;
 
-const char* ssid = "\\o/";
-const char* password = "Patag0nia";
-const char* mqttServer = "192.168.88.75";
-const char* mqttUser = "mqttuser";
-const char* mqttPassword = "ushuaia8615";
+const char* ssid = "ssid";
+const char* password = "password";
+const char* mqttServer = "ip";
+const char* mqttUser = "user";
+const char* mqttPassword = "mqttpassword";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
