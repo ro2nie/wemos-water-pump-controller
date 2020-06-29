@@ -28,7 +28,7 @@ const char* waterPumpAvailabilityTopic = "water-pump/availability";
 const char* waterWellRecoveryCountdownTopic = "water-well/recovery-countdown";
 const char* waterWellRestartTopic = "water-well/restart";
 
-void setupWifi() {  
+void setupWifi() {
   //Wait 10 seconds. This is to ensure the keepalives being sent to homeassistant stop, as to make the availability topic expire
   //and set the board as offline. When it goes back online, an offline to online state change is detected which homeassistant can use as a trigger
   //to resent the previously set state for water well recovery time.
@@ -72,7 +72,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (pumpState) {  //And if the pump is already running. Stop it.
       setPumpState(false, String(delayStart));
     }
-  } else if (strcmp(topic, waterWellRestartTopic) == 0) {    
+  } else if (strcmp(topic, waterWellRestartTopic) == 0) {
     ESP.restart();
   }
 }
@@ -112,7 +112,7 @@ void setup() {
   pinMode(RELAY_SWITCH, OUTPUT);
   //Start light as off. High is use because current needs to flow through, to turn off
   digitalWrite(LED_BUILTIN, HIGH);
-  Serial.begin(9600);  
+  Serial.begin(9600);
   setupWifi();
   client.setServer(mqttServer, 1883);
   client.setCallback(callback);
