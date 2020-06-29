@@ -1,14 +1,9 @@
+#include "connectionDetails.h"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 #define WELL_LEVEL_SENSOR D5
 const int RELAY_SWITCH = 5;
-
-const char* ssid = "ssid";
-const char* password = "password";
-const char* mqttServer = "ip";
-const char* mqttUser = "user";
-const char* mqttPassword = "mqttpassword";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -31,9 +26,13 @@ const char* waterTankIntentTopic = "water-tank/status";
 const char* waterPumpStatusTopic = "water-pump/status";
 const char* waterPumpAvailabilityTopic = "water-pump/availability";
 const char* waterWellRecoveryCountdownTopic = "water-well/recovery-countdown";
+const char* waterWellRestartTopic = "water-well/restart";
 
-void setupWifi() {
-  delay(10);
+void setupWifi() {  
+  //Wait 10 seconds. This is to ensure the keepalives being sent to homeassistant stop, as to make the availability topic expire
+  //and set the board as offline. When it goes back online, an offline to online state change is detected which homeassistant can use as a trigger
+  //to resent the previously set state for water well recovery time.
+  delay(10000);
   // Start by connecting to a WiFi network
   Serial.println("Connecting to: " + String(ssid));
   WiFi.begin(ssid, password);
@@ -73,6 +72,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     if (pumpState) {  //And if the pump is already running. Stop it.
       setPumpState(false, String(delayStart));
     }
+  } else if (strcmp(topic, waterWellRestartTopic) == 0) {    
+    ESP.restart();
   }
 }
 
@@ -88,6 +89,7 @@ void reconnect() {
       Serial.println("connected");
       client.subscribe(waterTankIntentTopic);
       client.subscribe(timeToWaitTopic);
+      client.subscribe(waterWellRestartTopic);
       // Initial waiting time is set as default in case MQTT server is down.
       Serial.println("About to set initial waiting time");
       client.publish(timeToWaitTopic, String(delayStartInt / 60000).c_str());
@@ -110,7 +112,7 @@ void setup() {
   pinMode(RELAY_SWITCH, OUTPUT);
   //Start light as off. High is use because current needs to flow through, to turn off
   digitalWrite(LED_BUILTIN, HIGH);
-  Serial.begin(9600);
+  Serial.begin(9600);  
   setupWifi();
   client.setServer(mqttServer, 1883);
   client.setCallback(callback);
