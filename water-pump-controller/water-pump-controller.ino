@@ -120,6 +120,7 @@ void setup() {
 
 void loop() {
   if (!client.connected()) {
+    setPumpState(false, String(delayStart));
     reconnect();
   }
   client.loop();
