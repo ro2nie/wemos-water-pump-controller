@@ -1,12 +1,21 @@
 #include "connectionDetails.h"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <ArduinoJson.h>
 
 #define WELL_LEVEL_SENSOR D5
-const int RELAY_SWITCH = 5;
+const int RELAY_SWITCH = D7; //Arduino pin
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+//Weather
+#define SEALEVELPRESSURE_HPA (1013.25)
+Adafruit_BME280 bme;
+float temperature, humidity, pressure, altitude;
 
 unsigned long timeStopped = 0;
 unsigned long timeStarted = 0;
@@ -27,6 +36,7 @@ const char* waterPumpStatusTopic = "water-pump/status";
 const char* waterPumpAvailabilityTopic = "water-pump/availability";
 const char* waterWellRecoveryCountdownTopic = "water-well/recovery-countdown";
 const char* waterWellRestartTopic = "water-well/restart";
+const char* waterWellWeatherTopic = "water-well/weather";
 
 void setupWifi() {
   //Wait 10 seconds. This is to ensure the keepalives being sent to homeassistant stop, as to make the availability topic expire
@@ -103,6 +113,30 @@ void reconnect() {
   }
 }
 
+void readWeatherData() {
+  temperature = bme.readTemperature();
+  humidity = bme.readHumidity();
+  pressure = bme.readPressure() / 100.0F;
+  altitude = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  //  Serial.print("Temperature");
+  //  Serial.println(temperature);
+  //  Serial.print("humidity");
+  //  Serial.println(humidity);
+  //  Serial.print("pressure");
+  //  Serial.println(pressure);
+  //  Serial.print("altitude");
+  //  Serial.println(altitude);
+
+  StaticJsonDocument<200> doc;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  doc["pressure"] = pressure;
+  doc["altitude"] = altitude;
+  String output;
+  serializeJson(doc, output);
+  client.publish(waterWellWeatherTopic, output.c_str());
+}
+
 void setup() {
   // Initialize the LED_BUILTIN pin as an output
   pinMode(LED_BUILTIN, OUTPUT);
@@ -113,6 +147,7 @@ void setup() {
   //Start light as off. High is use because current needs to flow through, to turn off
   digitalWrite(LED_BUILTIN, HIGH);
   Serial.begin(9600);
+  bme.begin(0x76);
   setupWifi();
   client.setServer(mqttServer, 1883);
   client.setCallback(callback);
@@ -206,5 +241,6 @@ void keepAlive() {
   if ((millis() - recordSeconds) >= keepAliveInterval) {
     client.publish(waterPumpAvailabilityTopic, "ON");
     recordSeconds = millis();
+    readWeatherData();
   }
 }
