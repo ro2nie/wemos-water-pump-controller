@@ -7,13 +7,13 @@
 #include <ArduinoJson.h>
 
 #define WELL_LEVEL_SENSOR D5
-const int RELAY_SWITCH = D7; //Arduino pin
+const int RELAY_SWITCH = D7;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 //Weather
-#define SEALEVELPRESSURE_HPA (1013.25)
+#define SEALEVELPRESSURE_HPA (1021)
 Adafruit_BME280 bme;
 float temperature, humidity, pressure, altitude;
 
