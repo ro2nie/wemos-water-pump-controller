@@ -43,6 +43,8 @@ void setupWifi() {
   //and set the board as offline. When it goes back online, an offline to online state change is detected which homeassistant can use as a trigger
   //to resent the previously set state for water well recovery time.
   delay(10000);
+  // Set hostname
+  WiFi.hostname("water-pump-controller");
   // Start by connecting to a WiFi network
   Serial.println("Connecting to: " + String(ssid));
   WiFi.begin(ssid, password);
@@ -146,8 +148,8 @@ void setup() {
   pinMode(RELAY_SWITCH, OUTPUT);
   //Start light as off. High is use because current needs to flow through, to turn off
   digitalWrite(LED_BUILTIN, HIGH);
-  Serial.begin(9600);
   bme.begin(0x76);
+  Serial.begin(9600);
   setupWifi();
   client.setServer(mqttServer, 1883);
   client.setCallback(callback);
